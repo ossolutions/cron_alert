@@ -1,115 +1,40 @@
 <?php
 
-/**
-* Implements hook_help().
-*/
-function cron_alert_help($path, $arg) {
-	//creating a help hook
-	$output = "";
-	switch ($path) {
-		case "admin/help#cron_alert":
-			$output = "<p>" . t("Choose search box sizes to enable.") . "</p>";
-			break;
+function cron_alert_status() {
+	
+	// Get variables
+	$to = variable_get('cron_alert_email', 'roger@ossolutions.org');
+	$from = variable_get('cron_alert_email_from', 'cron@itworld.com');
+	$params['subject'] = variable_get('cron_alert_email_subject', 'Cron Alert');
+	$params['body'] = variable_get('cron_alert_email_body', 'Cron run is past due.');
+	$show_details = variable_get('cron_alert_show_details', 0);
+	$minutes = variable_get('cron_alert_minutes', 20);
+	$last_run = variable_get('cron_last', 1);
+	$current_time = time();
+	$cutoff = $last_run+(1*$minutes*60);
+	// end Get variables
+	
+	
+	if ($show_details) {
+		echo 'Cron last ran at ' . gmdate("M d Y H:i:s", $last_run);
+		echo '<br>';
+		echo 'Cutoff set to ' . gmdate("M d Y H:i:s", $cutoff);
+		echo '<br>';
+		echo 'Current time is ' . gmdate("M d Y H:i:s", $current_time);
+		echo '<br>';
+		echo 'Sending email to ' . $to;
+		echo '<br>';
+		echo 'Minutes set to ' . $minutes;
+		echo '<br>';
 	}
-	return $output;
-}
-
-/**
-* Implements hook_menu().
-*/
-
-function cron_alert_menu() {
-	$items = array();
-	$items['admin/settings/cron_alert'] = array(
-		'title' => "Cron Alert Settings",
-		'description' => "Set Cron Alert Options.",
-		'page callback' => 'drupal_get_form',
-		'page arguments' => array('cron_alert_admin'),
-		'access arguments' => array('access administration pages'),
-		'type' => MENU_NORMAL_ITEM,
-	);
-
-	$items['cron_alert/run'] = array(
-		'title' => 'Run Cron Alert',
-		'page callback' => 'cron_alert_status',
-		'access arguments' => array('access content'),
-		'type' => MENU_CALLBACK,
-		'file' => 'cron_alert_run.inc',
-	);
-	return $items;
-}
-
-/**
-* Implements hook_form().
-*/
-function cron_alert_admin() {
-	$form = array();
-	$minuteRange = range(0, 60, 1);
-
-	$form['cron_alert_email'] = array(
-		'#title' => t("Email List"),
-		'#type' => 'textfield',
-		'#default_value' => variable_get('cron_alert_email', ''),
-		'#size' => 100,
-		'#description' => t("Set email address to send alerts to"),
-	);
-
-	$form['cron_alert_minutes'] = array(
-		'#title' => t("Minutes Select"),
-		'#type' => 'select',
-		'#options' => $minuteRange,
-		'#default_value' => variable_get('cron_alert_minutes', 20),
-		'#description' => t("Number of minutes that must pass before email is sent. Default is 20 minutes."),
-	);
-	
-	$form['cron_alert_email_from'] = array(
-		'#title' => t("Email From"),
-		'#type' => 'textfield',
-		'#default_value' => variable_get('cron_alert_email_from', 'cron@itworld.com'),
-		'#size' => 100,
-		'#description' => t("Set email from on sent alerts."),
-	);
-	
-	$form['cron_alert_email_subject'] = array(
-		'#title' => t("Email Subject"),
-		'#type' => 'textfield',
-		'#default_value' => variable_get('cron_alert_email_subject', 'Cron Alert'),
-		'#size' => 100,
-		'#description' => t("Set email subject on sent alerts."),
-	);
-	
-	$form['cron_alert_email_body'] = array(
-		'#title' => t("Email List"),
-		'#type' => 'textarea',
-		'#default_value' => variable_get('cron_alert_email_body', 'Cron run is past due.'),
-		'#description' => t("Set email body on sent alerts."),
-	);
-	
-	$form['cron_alert_show_details'] = array(
-		'#title' => t("Show Details?"),
-		'#type' => 'radios',
-		'#options' => array(t('Show'), t('Hide')),
-		'#default_value' => variable_get('cron_alert_show_details', 1),
-		'#description' => t("Choose to show the alert details on /cron_alert/run or not."),
-	);
-
-	return system_settings_form($form);
-}
-
-/**
- * Implements hook_mail().
- */
-function cron_alert_mail($key, &$message, $params) {
-	$headers = array(
-	'MIME-Version' => '1.0',
-	'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
-	'Content-Transfer-Encoding' => '8Bit',
-	'X-Mailer' => 'Drupal'
-	);
-	switch($key) {
-	  case 'notice':
-		$message['subject'] = $params['subject'];
-		$message['body'] = $params['body'];
-		break;
+	//Verify that the selected number of minutes has passed time already
+	if ($cutoff < $current_time) {
+        if ($show_details) {
+			$error = "Cron run is past due.<br>Check site <a href='/admin/reports/status' target='_blank'>status</a> report.";
+			echo $error;
+		}
+		$message = drupal_mail('cron_alert', 'notice', $to, language_default(), $params, $from, TRUE);			
 	}
+
+	return;
 }
