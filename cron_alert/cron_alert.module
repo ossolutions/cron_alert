@@ -51,7 +51,7 @@ function cron_alert_admin() {
 		'#type' => 'textfield',
 		'#default_value' => variable_get('cron_alert_email', ''),
 		'#size' => 100,
-		'#description' => t("Set email addresse to send alerts to"),
+		'#description' => t("Set email address to send alerts to"),
 	);
 
 	$form['cron_alert_minutes'] = array(
@@ -62,6 +62,37 @@ function cron_alert_admin() {
 		'#description' => t("Number of minutes that must pass before email is sent. Default is 20 minutes."),
 	);
 	
+	$form['cron_alert_email_from'] = array(
+		'#title' => t("Email From"),
+		'#type' => 'textfield',
+		'#default_value' => variable_get('cron_alert_email_from', 'cron@itworld.com'),
+		'#size' => 100,
+		'#description' => t("Set email from on sent alerts."),
+	);
+	
+	$form['cron_alert_email_subject'] = array(
+		'#title' => t("Email Subject"),
+		'#type' => 'textfield',
+		'#default_value' => variable_get('cron_alert_email_subject', 'Cron Alert'),
+		'#size' => 100,
+		'#description' => t("Set email subject on sent alerts."),
+	);
+	
+	$form['cron_alert_email_body'] = array(
+		'#title' => t("Email List"),
+		'#type' => 'textarea',
+		'#default_value' => variable_get('cron_alert_email_body', 'Cron run is past due.'),
+		'#description' => t("Set email body on sent alerts."),
+	);
+	
+	$form['cron_alert_show_details'] = array(
+		'#title' => t("Show Details?"),
+		'#type' => 'radios',
+		'#options' => array(t('Show'), t('Hide')),
+		'#default_value' => variable_get('cron_alert_show_details', 1),
+		'#description' => t("Choose to show the alert details on /cron_alert/run or not."),
+	);
+
 	return system_settings_form($form);
 }
 
@@ -77,8 +108,8 @@ function cron_alert_mail($key, &$message, $params) {
 	);
 	switch($key) {
 	  case 'notice':
-		$message['subject'] = 'Cron Alert';
-		$message['body'] = 'Cron run is past due.';
+		$message['subject'] = $params['subject'];
+		$message['body'] = $params['body'];
 		break;
 	}
 }
