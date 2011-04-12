@@ -1,0 +1,84 @@
+<?php
+
+/**
+* Implements hook_help().
+*/
+function cron_alert_help($path, $arg) {
+	//creating a help hook
+	$output = "";
+	switch ($path) {
+		case "admin/help#cron_alert":
+			$output = "<p>" . t("Choose search box sizes to enable.") . "</p>";
+			break;
+	}
+	return $output;
+}
+
+/**
+* Implements hook_menu().
+*/
+
+function cron_alert_menu() {
+	$items = array();
+	$items['admin/settings/cron_alert'] = array(
+		'title' => "Cron Alert Settings",
+		'description' => "Set Cron Alert Options.",
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('cron_alert_admin'),
+		'access arguments' => array('access administration pages'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+
+	$items['cron_alert/run'] = array(
+		'title' => 'Run Cron Alert',
+		'page callback' => 'cron_alert_status',
+		'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+		'file' => 'cron_alert_run.inc',
+	);
+	return $items;
+}
+
+/**
+* Implements hook_form().
+*/
+function cron_alert_admin() {
+	$form = array();
+	$minuteRange = range(0, 60, 1);
+
+	$form['cron_alert_email'] = array(
+		'#title' => t("Email List"),
+		'#type' => 'textfield',
+		'#default_value' => variable_get('cron_alert_email', ''),
+		'#size' => 100,
+		'#description' => t("Set email addresse to send alerts to"),
+	);
+
+	$form['cron_alert_minutes'] = array(
+		'#title' => t("Minutes Select"),
+		'#type' => 'select',
+		'#options' => $minuteRange,
+		'#default_value' => variable_get('cron_alert_minutes', 20),
+		'#description' => t("Number of minutes that must pass before email is sent. Default is 20 minutes."),
+	);
+	
+	return system_settings_form($form);
+}
+
+/**
+ * Implements hook_mail().
+ */
+function cron_alert_mail($key, &$message, $params) {
+	$headers = array(
+	'MIME-Version' => '1.0',
+	'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+	'Content-Transfer-Encoding' => '8Bit',
+	'X-Mailer' => 'Drupal'
+	);
+	switch($key) {
+	  case 'notice':
+		$message['subject'] = 'Cron Alert';
+		$message['body'] = 'Cron run is past due.';
+		break;
+	}
+}

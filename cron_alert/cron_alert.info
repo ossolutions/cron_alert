@@ -1,0 +1,6 @@
+name = cron_alert
+description = "Send alerts if cron is off schedule"
+core = 6.x
+package = "ITW Utilites"
+version = "6.x-1.0"
+
